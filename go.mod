@@ -1,4 +1,4 @@
-module filely
+module github.com/jscyril/filely
 
 go 1.23.3
 

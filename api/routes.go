@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/jscyril/Filely/internal/handlers"
+	"github.com/jscyril/filely/internal/handlers"
 )
 
 func RegisterRoutes(router *gin.Engine) {
