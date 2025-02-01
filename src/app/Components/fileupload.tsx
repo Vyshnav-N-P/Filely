@@ -55,7 +55,7 @@ export default function Home() {
 
   return (
     <>
-     <div className="w-64 h-40 bg-white shadow-2xl rounded-lg p-4 hover:bg-gray-300 hover:text-blue-300 text-white text-xl relative">
+     <div className="min-w-[16rem] min-h-[10rem] bg-white shadow-2xl rounded-lg p-4 hover:bg-gray-300 hover:text-blue-300 text-white text-xl relative">
           <input
             type="file"
             className="hidden"
