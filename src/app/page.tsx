@@ -9,10 +9,12 @@ export default function Home() {
     <>
       <div className='flex justify-between'> 
         <p className="font-bold text-6xl text-white">FILELY</p>
-        
-        <Link href="/about" className='text-white   hover:text-blue-200  z-10'>
+        <div className='z-10'> 
+          <Link href="/about" className='text-white  font-bold hover:text-blue-200  text-xl '>
           About Us
-        </Link>
+          </Link>
+        </div>
+       
       </div>
      
       <div className="flex h-screen justify-center items-center -translate-y-20 gap-10">
