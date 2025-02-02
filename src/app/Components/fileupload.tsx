@@ -8,7 +8,7 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<any>(''); // For preview image
   const [fileName, setFileName] = useState('');
-
+  
   // Handle file selection
   const handleFileChange = (e:any) => {
     const selectedFile = e.target.files[0];
@@ -44,7 +44,22 @@ export default function Home() {
           <p className="text-black ml-2">{fileName}</p>
         </div>
       );
-    } else {
+    } 
+    else if (file.type.match('video.*')){
+      <div className='w-full h-full flex flex-col justify-center items-center bg-gray-200 rounded-lg gap-2'>
+      <video controls preload="none" >
+      <source src={previewUrl} type="video/mp4" />
+      <track
+        src=""
+        kind="subtitles"
+        srcLang="en"
+        label="English"
+      />
+      Your browser does not support the video tag.
+    </video>
+    </div>
+    }
+    else {
       return (
         <div className="w-full h-full flex justify-center items-center bg-gray-200 rounded-lg">
           <p className="text-black">No preview available for this file type.</p>

@@ -1,7 +1,7 @@
 'use client';
+import { useEffect } from 'react';
 import './globals.css';
 import FileUpload from './Components/fileupload';
-import Link from 'next/link';
 export default function Home() {
 
 
@@ -10,9 +10,9 @@ export default function Home() {
       <div className='flex justify-between'> 
         <p className="font-bold text-6xl text-white">FILELY</p>
         <div className='z-10'> 
-          <Link href="/about" className='text-white  font-bold hover:text-blue-200  text-xl '>
+          <a href="/about" className='text-white  font-bold hover:text-blue-200  text-xl pt-5'>
           About Us
-          </Link>
+          </a>
         </div>
        
       </div>
