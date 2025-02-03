@@ -2,6 +2,8 @@
 import { useEffect } from 'react';
 import './globals.css';
 import FileUpload from './Components/fileupload';
+import Share from './Components/share';
+
 export default function Home() {
 
 
@@ -18,7 +20,10 @@ export default function Home() {
       </div>
      
       <div className="flex h-screen justify-center items-center -translate-y-20 gap-10">
-       <FileUpload />
+        <div className='flex flex-col justify-center items-center align-middle gap-5'>
+        <FileUpload />
+        <Share />
+        </div>
 
         <div className="flex flex-col align-middle items-center">
           <h3 className="text-white text-3xl">
