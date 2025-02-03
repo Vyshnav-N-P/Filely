@@ -4,11 +4,14 @@ import '../globals.css';
 
 
 export default function Peerconnection(){
+     // Constants
+    const FILE_INFO_PREFIX = "FILE_INFO:";
+    const FILE_END_PREFIX = "FILE_END:";
 
     //Files
-    const [isconnected,setisconnected] =useState(true);
-    const [sendingfile,setsendingfile] = useState(null);
-    const [receiveFile,setreceivefile] = useState(null);
+    const [isconnected,setisconnected] =useState(false);
+    const [sendingfile,setsendingfile] = useState<File | null>(null);
+    const [receiveFile,setreceivefile] = useState<string[]>([]);
 
     //Channels and Connections
 
@@ -16,6 +19,7 @@ export default function Peerconnection(){
     let remoteConnection = useRef <RTCPeerConnection | null> (null);
     let sendchannel = useRef <RTCDataChannel | null> (null);
     let receivechannel = useRef< RTCDataChannel | null> (null);
+    let filereader = useRef<FileReader | null >(null);
     
     //Functions
 
@@ -36,7 +40,11 @@ export default function Peerconnection(){
             receivechannel.current.onmessage = (e) => {
                 setreceivefile(e.data); // Store received file data
             };
-         };
+
+        receivechannel.current.onopen = () => console.log('Receive channel opened');
+        receivechannel.current.onclose = () => console.log('Receive channel closed');
+        
+        };
 
         // Handle ICE candidates
         localConnection.current.onicecandidate = (e) => {
@@ -67,7 +75,25 @@ export default function Peerconnection(){
    
     const sendFile = async () => {
         if (!sendchannel.current || !sendingfile) return;
+        const fileInfo = {
+            name:sendingfile.name,
+            type:sendingfile.type,
+            size: sendingfile.size
+        };
         
+        sendchannel.current.send(FILE_INFO_PREFIX + JSON.stringify(fileInfo));
+
+        //File reader
+        filereader.current = new FileReader();
+        let offset=0;
+        filereader.current.addEventListener('load',(e) => {
+            if(!sendchannel.current) return;
+            offset += (e.target?.result as ArrayBuffer).byteLength;
+
+        });
+
+        };
+
     }
 
     const disconnect = ()=>{

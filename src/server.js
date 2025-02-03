@@ -1,5 +1,5 @@
 const http = require("http");
-const { Server } =requrie('socket.io');
+const { Server } =require('socket.io');
 
 const server = http.createServer();
 const io=new Server(server , {
@@ -8,7 +8,7 @@ const io=new Server(server , {
     }, 
 });
 
-io.on(connection, (socket)=>{
+io.on("connection", (socket)=>{
     console.log("User connected:", socket.id);
 
     socket.on("offer", (data) => {
