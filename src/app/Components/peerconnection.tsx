@@ -7,8 +7,8 @@ export default function Peerconnection(){
 
     //Files
     const [isconnected,setisconnected] =useState(true);
-    const [sendFile,setsendfile] = useState();
-    const [receiveFile,setreceivefile] = useState();
+    const [sendingfile,setsendingfile] = useState(null);
+    const [receiveFile,setreceivefile] = useState(null);
 
     //Channels and Connections
 
@@ -26,13 +26,50 @@ export default function Peerconnection(){
 
         // Creating data channels
         sendchannel.current = localConnection.current.createDataChannel('sendchannel');
-        receivechannel.current = remoteConnection.current.createDataChannel('receivechannel');
 
         sendchannel.current.onopen = () => {setisconnected(true)}
         sendchannel.current.onclose = () => {setisconnected(false)}
 
+         // Remote peer listens for incoming data channels
+         remoteConnection.current.ondatachannel= (e) => {
+            receivechannel.current = e.channel;
+            receivechannel.current.onmessage = (e) => {
+                setreceivefile(e.data); // Store received file data
+            };
+         };
+
+        // Handle ICE candidates
+        localConnection.current.onicecandidate = (e) => {
+            if (!e.candidate) return ;
+            remoteConnection.current?.addIceCandidate(e.candidate)
+                .catch(err => console.error("Error adding candidate"));
+        }
+        remoteConnection.current.onicecandidate = (e) => {
+            if (!e.candidate) return ;
+            localConnection.current?.addIceCandidate(e.candidate)
+                .catch(err => console.error("Error adding candidate"));
+        }
+
+        //Create SDP Offer/Answer
+        try {
+            const offer = await localConnection.current.createOffer();
+            await localConnection.current.setLocalDescription(offer);
+            await remoteConnection.current.setRemoteDescription(offer);
+
+            const answer = await remoteConnection.current.createAnswer();
+            await remoteConnection.current.setLocalDescription(answer);
+            await localConnection.current.setRemoteDescription(answer);
+        }
+        catch(err) {
+            console.error('Error creating connection:', err);
+        }
     };
-    
+   
+    const sendFile = async () => {
+        if (!sendchannel.current || !sendingfile) return;
+        
+    }
+
     const disconnect = ()=>{
         localConnection.current?.close();
         remoteConnection.current?.close();
