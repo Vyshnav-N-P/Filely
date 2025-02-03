@@ -9,11 +9,14 @@ export default function Home() {
 
   return (
     <>
-      <div className='flex justify-between'> 
+      <div className='flex justify-between m-5'> 
         <p className="font-bold text-6xl text-white">FILELY</p>
-        <div className='z-10'> 
+        <div className='z-10 flex gap-20 '> 
           <a href="/about" className='text-white  font-bold hover:text-blue-200  text-xl pt-5'>
           About Us
+          </a>
+          <a href="/contribute" className='text-white  font-bold hover:text-blue-200  text-xl pt-5'>
+          Contribute
           </a>
         </div>
        
