@@ -12,10 +12,10 @@ export default function Home() {
       <div className='flex justify-between m-5'> 
         <p className="font-bold text-6xl text-white">FILELY</p>
         <div className='z-10 flex gap-20 '> 
-          <a href="/about" className='text-white  font-bold hover:text-blue-200  text-xl pt-5'>
+          <a href="/about" className='text-white  font-bold  hover:border-t-4   text-xl pt-5'>
           About Us
           </a>
-          <a href="/contribute" className='text-white  font-bold hover:text-blue-200  text-xl pt-5'>
+          <a href="/contribute" className='text-white  font-bold hover:border-t-4  text-xl pt-5'>
           Contribute
           </a>
         </div>
