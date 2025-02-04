@@ -27,7 +27,12 @@ export default function Home() {
     if (!file) return null;
 
     if (file.type.match('image.*')) {
-      return <img src={previewUrl} alt="Preview" className="w-full h-full object-cover rounded-lg" />;
+      return (
+        <div className='w-52 h-80 flex flex-col justify-center items-center bg-gray-200 rounded-lg gap-2'>
+          <img src={previewUrl} alt="Preview" className="w-full h-full object-cover rounded-lg items-center"  />;
+          <p className="text-black text-sm">{fileName}</p>
+        </div>
+      );
     } else if (file.type.match('audio.*')) {
       return (
       <div className='w-full h-full flex flex-col justify-center items-center bg-gray-200 rounded-lg gap-2'>
@@ -40,7 +45,7 @@ export default function Home() {
     } else if (file.type.match('application/pdf')) {
       return (
         <div className="w-full h-full flex justify-center items-center bg-gray-200 rounded-lg">
-          <img src={pdfimage.src} alt="PDF Icon" className="w-16 h-16" />
+          <img src={pdfimage.src} alt="PDF Icon" className="w-full h-full object-cover" />
           <p className="text-black ml-2">{fileName}</p>
         </div>
       );
