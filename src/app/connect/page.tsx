@@ -1,9 +1,13 @@
 'use client';
 import '../globals.css';
+import copyicon from '../../../public/Images/copy-icon.png'
 import { useState, useRef, useEffect } from "react";
 import { io } from "socket.io-client"; // Import Socket.io client
+import QRcode from "qrcode";
+import BackButton from '../Components/backbutton';
 
 export default function Connect() {
+    const [qrCodeurl, setQrCodeurl] = useState<string>('');
     const [isConnected, setIsConnected] = useState(false);
     const peerConnection = useRef<RTCPeerConnection | null>(null);
     const socket = useRef<any>(null);
@@ -65,8 +69,11 @@ export default function Connect() {
         const offer = await peerConnection.current?.createOffer();
         await peerConnection.current?.setLocalDescription(offer);
 
+        const qrcodeData = JSON.stringify(offer);
+        const qrcode = await QRcode.toDataURL(qrcodeData);
+        setQrCodeurl(qrcode); 
         // Send offer to the signaling server
-        socket.current.emit("offer", { offer });
+         socket.current.emit("offer", { offer });
     };
 
     // Disconnect WebRTC
@@ -75,12 +82,36 @@ export default function Connect() {
         peerConnection.current = null;
         setIsConnected(false);
         socket.current.disconnect();
+        setQrCodeurl("");
     };
 
+    const copyToclipboard = () => {
+        try {
+            navigator.clipboard.writeText(qrCodeurl);
+            alert("offer copied to clipboard");
+        }catch (e) {
+            console.error("Failed to copy to clipboard:", e);
+            alert("Failed to copy offer to clipboard");
+        }
+       
+    };
     return (
-        <div className="flex justify-center align-middle items-center gap-10 h-screen">
+        <>
+        <BackButton />
+            <div className="flex justify-center align-middle items-center gap-10 h-screen">
             <button onClick={startConnection} className="p-3 text-2xl bg-white rounded-lg">Connect</button>
+            {qrCodeurl && (
+                <div className='flex flex-col align-middle justify-center items-center'>
+                    <h2 className="text-white mt-4 text-lg font-semibold text-center">Scan this QR Code</h2>
+                    <img src={qrCodeurl} alt="QR Code" className="w-80 h-80 mt-4" />
+                    <button onClick={copyToclipboard} className='mt-3'>
+                        <img src={copyicon.src} alt="" className='w-5 h-5 '/>
+                    </button>
+                </div>
+            )}
             <button onClick={disconnect} className="p-3 text-2xl bg-white rounded-lg">Disconnect</button>
         </div>
+        </>
+
     );
 }
