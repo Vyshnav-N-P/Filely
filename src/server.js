@@ -12,14 +12,14 @@ io.on("connection", (socket)=>{
     console.log("User connected:", socket.id);
 
     socket.on("offer", (data) => {
-        socket.broadcast.emit("offer", data);
+        socket.to().emit("offer", data);
       });
 
     socket.on('answer', (data) => {
-        socket.broadcast.emit('answer', data);
+        socket.to().emit('answer', data);
     })
     socket.on('icecandidate', (data) => {
-        socket.broadcast.emit('icecandidate', data);
+        socket.to().emit('icecandidate', data);
     })
     socket.on('disconnect', () => {
         console.log("User disconnected:", socket.id);

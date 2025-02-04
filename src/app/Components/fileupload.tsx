@@ -35,7 +35,7 @@ export default function Home() {
       );
     } else if (file.type.match('audio.*')) {
       return (
-      <div className='w-full h-full flex flex-col justify-center items-center bg-gray-200 rounded-lg gap-2'>
+      <div className='w-52 h-80 flex flex-col justify-center items-center align-middle bg-gray-200 rounded-lg gap-2'>
         <img src={audioimage.src} alt="Audio Icon" className="w-16 h-16" />
         <audio controls src={previewUrl} className="w-full h-10" />
         <p className="text-black text-sm">{fileName}</p>
@@ -44,14 +44,14 @@ export default function Home() {
     );
     } else if (file.type.match('application/pdf')) {
       return (
-        <div className="w-full h-full flex justify-center items-center bg-gray-200 rounded-lg">
+        <div className="w-52 h-80 flex flex-col justify-center items-center align-middle bg-gray-200 rounded-lg">
           <img src={pdfimage.src} alt="PDF Icon" className="w-full h-full object-cover" />
           <p className="text-black ml-2">{fileName}</p>
         </div>
       );
     } 
     else if (file.type.match('video.*')){
-      <div className='w-full h-full flex flex-col justify-center items-center bg-gray-200 rounded-lg gap-2'>
+      <div className='w-52 h-80 flex flex-col justify-center items-center bg-gray-200 rounded-lg gap-2'>
       <video controls preload="none" >
       <source src={previewUrl} type="video/mp4" />
       <track

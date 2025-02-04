@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import './globals.css';
 import FileUpload from './Components/fileupload';
 import Share from './Components/share';
+import PeerConnection from './Components/peerconnection';
 
 export default function Home() {
 
@@ -12,6 +13,9 @@ export default function Home() {
       <div className='flex justify-between m-5'> 
         <p className="font-bold text-6xl text-white">FILELY</p>
         <div className='z-10 flex gap-20 '> 
+        <a href="/connect" className='text-white  font-bold hover:border-t-4  text-xl pt-5'>
+          Connect
+          </a>
           <a href="/about" className='text-white  font-bold  hover:border-t-4   text-xl pt-5'>
           About Us
           </a>
@@ -37,6 +41,8 @@ export default function Home() {
             anything online.
           </h4>
         </div>
+
+
       </div>
     </>
   );
