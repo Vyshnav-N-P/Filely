@@ -7,11 +7,13 @@ import QRcode from "qrcode";
 import BackButton from '../Components/backbutton';
 
 export default function Connect() {
+    const [copyUrl,setCopyUrl] = useState<string>('');
     const [qrCodeurl, setQrCodeurl] = useState<string>('');
     const [isConnected, setIsConnected] = useState(false);
     const peerConnection = useRef<RTCPeerConnection | null>(null);
     const socket = useRef<any>(null);
     const isInitiator = useRef<boolean>(false);
+
 
     useEffect(() => {
         // Connect to the WebSocket signaling server
@@ -48,6 +50,45 @@ export default function Connect() {
         };
     }, []);
 
+    //Decoding if we got redirected from an offer
+    useEffect(() => {
+
+        const handleOffer= async()=> {
+            const urlParams = new URLSearchParams(window.location.search);
+            const offerparam = urlParams.get("offer");
+            
+            if (offerparam) {
+
+                try {
+                    isInitiator.current = false;
+                    
+                    const decodedparam = decodeURIComponent(offerparam);
+                    const offer = JSON.parse(decodedparam);
+                    console.log("Decoded Offer:", offer);
+
+                    // If an offer is received, create the peer connection and send back an answer
+                    if (!peerConnection.current) createPeerConnection();
+
+                    await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(offer));
+
+                    const answer =await  peerConnection.current?.createAnswer(); 
+                    await peerConnection.current?.setLocalDescription(answer);
+
+                    // Send answer back to the signaling server
+                    if (socket.current) {
+                        socket.current.emit("answer", { answer });
+                        setIsConnected(true);
+                    }
+
+
+                } catch (error) {
+                    console.error("Failed to decode offer:", error);
+                }
+            }
+        };
+        handleOffer();
+    }, []);
+  
     // Create Peer Connection
     const createPeerConnection = () => {
         peerConnection.current = new RTCPeerConnection({
@@ -68,10 +109,15 @@ export default function Connect() {
 
         const offer = await peerConnection.current?.createOffer();
         await peerConnection.current?.setLocalDescription(offer);
-
+        
+       //convert to encode
         const qrcodeData = JSON.stringify(offer);
-        const qrcode = await QRcode.toDataURL(qrcodeData);
+        const encodeddata= encodeURIComponent(qrcodeData);
+        const qrd = `http://localhost:3000/connect?offer=${encodeddata}`;
+        const qrcode = await QRcode.toDataURL(qrd);
         setQrCodeurl(qrcode); 
+        setCopyUrl(qrd)
+       
         // Send offer to the signaling server
          socket.current.emit("offer", { offer });
     };
@@ -87,7 +133,7 @@ export default function Connect() {
 
     const copyToclipboard = () => {
         try {
-            navigator.clipboard.writeText(qrCodeurl);
+            navigator.clipboard.writeText(copyUrl);
             alert("offer copied to clipboard");
         }catch (e) {
             console.error("Failed to copy to clipboard:", e);
