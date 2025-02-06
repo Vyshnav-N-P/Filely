@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 
-// Temporary in-memory store (resets when function restarts)
-let signalingStore: { [key: string]: any } = {};
+// Keep let (mutable) but define proper types
+let signalingStore: Record<
+  string,
+  {
+    offer?: RTCSessionDescriptionInit;
+    answer?: RTCSessionDescriptionInit;
+    candidates?: RTCIceCandidateInit[];
+  }
+> = {};
 
-// Handle POST requests (Store offer, answer, or ICE candidates)
+// Handle SDP & ICE Candidate exchange
 export async function POST(req: Request) {
   try {
     const { roomId, type, data } = await req.json();
@@ -29,11 +36,9 @@ export async function POST(req: Request) {
       signalingStore[roomId].candidates.push(data);
     }
 
-    return NextResponse.json(
-      { message: "Signaling data stored" },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: "Signaling data stored" });
   } catch (error) {
+    console.error("POST Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
@@ -51,8 +56,9 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
 
-    return NextResponse.json(signalingStore[roomId], { status: 200 });
+    return NextResponse.json(signalingStore[roomId]);
   } catch (error) {
+    console.error("GET Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
