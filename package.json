@@ -14,11 +14,13 @@
     "next": "15.1.6",
     "next-qrcode": "^2.5.1",
     "qrcode": "^1.5.4",
+    "razorpay": "^2.9.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "simple-peer": "^9.11.1",
     "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.8.1",
+    "vercel": "^41.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

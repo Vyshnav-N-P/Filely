@@ -16,7 +16,7 @@ io.on("connection", (socket)=>{
       });
 
     socket.on('answer', (data) => {
-        socket.to().emit('answer', data);
+        socket.to().emit('answer', data);``
     })
     socket.on('icecandidate', (data) => {
         socket.to().emit('icecandidate', data);

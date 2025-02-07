@@ -1,163 +1,220 @@
 'use client';
 import '../globals.css';
-import copyicon from '../../../public/Images/copy-icon.png'
+import copyicon from '../../../public/Images/copy-icon.png';
 import { useState, useRef, useEffect } from "react";
-import { io } from "socket.io-client"; // Import Socket.io client
+import { io } from "socket.io-client"; 
 import QRcode from "qrcode";
 import BackButton from '../Components/backbutton';
 
 export default function Connect() {
-    const [copyUrl,setCopyUrl] = useState<string>('');
-    const [qrCodeurl, setQrCodeurl] = useState<string>('');
-    const [isConnected, setIsConnected] = useState(false);
-    const peerConnection = useRef<RTCPeerConnection | null>(null);
-    const socket = useRef<any>(null);
-    const isInitiator = useRef<boolean>(false);
+    // States for URL copy functionality and QR code generation
+    const [copyUrl, setCopyUrl] = useState<string>(''); 
+    const [qrCodeurl, setQrCodeurl] = useState<string>(''); 
 
+    // State to track the connection status
+    const [isConnected, setIsConnected] = useState(false); 
 
-    useEffect(() => {
-        // Connect to the WebSocket signaling server
-        socket.current = io("http://localhost:5000"); // Change this to your server URL if deployed
+    // Refs to manage WebRTC peer connection and other related objects
+    const peerConnection = useRef<RTCPeerConnection | null>(null); 
+    const socket = useRef<any>(null); // Socket instance for signaling
+    const isInitiator = useRef<boolean>(false); // Tracks if the user is the initiator
+    const dataChannel = useRef<RTCDataChannel | null>(null); // Data channel for peer-to-peer communication
+    const clientId = useRef<string>(Math.random().toString(36).substring(7)); // Unique client ID generated for each client
 
-        // Handle incoming offers
+    // Initialize socket connection and handle signaling messages
+    const initilizeSocket = () => {
+        socket.current = io("http://localhost:5000"); // Connect to the signaling server
+
+        console.log(clientId); // Log the unique client ID
+
+        // Handle incoming offer
         socket.current.on("offer", async (data: any) => {
             console.log("Received Offer:", data.offer);
-            if (!peerConnection.current) createPeerConnection();
+            if (!peerConnection.current) createPeerConnection(); // Create peer connection if it doesn't exist
 
-            await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(data.offer));
-            const answer = await peerConnection.current?.createAnswer();
-            await peerConnection.current?.setLocalDescription(answer);
+            try {
+                // Set the remote offer description
+                await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(data.offer));
 
-            // Send answer back
-            socket.current.emit("answer", { answer, to: data.from });
+                // Create an answer to the offer
+                const answer = await peerConnection.current?.createAnswer();
+                console.log(answer);
+                await peerConnection.current?.setLocalDescription(answer);
+
+                // Send the answer back to the signaling server
+                socket.current.emit("answer", { answer, to: data.from });
+
+            } catch (err) {
+                console.log(err);
+            }
         });
 
-        // Handle incoming answers
+        // Handle incoming answer
         socket.current.on("answer", async (data: any) => {
-            console.log("Received Answer:", data.answer);
-            await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(data.answer));
-            setIsConnected(true);
+            if (data.to === clientId.current) {
+                console.log("Received Answer:", data.answer);
+                await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(data.answer));
+                setIsConnected(true); // Update the connection status to true
+            }
         });
 
         // Handle incoming ICE candidates
         socket.current.on("icecandidate", async (data: any) => {
-            console.log("Received ICE Candidate");
-            await peerConnection.current?.addIceCandidate(new RTCIceCandidate(data.candidate));
+            if (data.to === clientId.current) {
+                console.log("Received ICE Candidate");
+                await peerConnection.current?.addIceCandidate(new RTCIceCandidate(data.candidate));
+            }
         });
 
         return () => {
-            socket.current.disconnect();
+            socket.current.disconnect(); // Disconnect socket when the component unmounts
         };
-    }, []);
+    };
 
-    //Decoding if we got redirected from an offer
     useEffect(() => {
+        const handleOffer = async () => {
+            const urlParams = new URLSearchParams(window.location.search); // Get URL query parameters
+            const offerparam = urlParams.get("offer"); // Get the offer parameter from the URL
 
-        const handleOffer= async()=> {
-            const urlParams = new URLSearchParams(window.location.search);
-            const offerparam = urlParams.get("offer");
-            
             if (offerparam) {
+                isInitiator.current = false; // Mark as not initiator
+                initilizeSocket(); // Initialize socket connection
 
                 try {
-                    isInitiator.current = false;
-                    
-                    const decodedparam = decodeURIComponent(offerparam);
-                    const offer = JSON.parse(decodedparam);
+                    const decodedparam = decodeURIComponent(offerparam); // Decode the URL-encoded offer
+                    const offer = JSON.parse(decodedparam); // Parse the decoded offer
                     console.log("Decoded Offer:", offer);
 
-                    // If an offer is received, create the peer connection and send back an answer
-                    if (!peerConnection.current) createPeerConnection();
+                    if (!peerConnection.current) createPeerConnection(); // Create peer connection if not already created
 
-                    await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(offer));
+                    // Set remote description with the received offer
+                    await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(offer.offer));
 
-                    const answer =await  peerConnection.current?.createAnswer(); 
+                    // Create an answer to the offer
+                    const answer = await peerConnection.current?.createAnswer();
                     await peerConnection.current?.setLocalDescription(answer);
 
-                    // Send answer back to the signaling server
-                    if (socket.current) {
-                        socket.current.emit("answer", { answer });
-                        setIsConnected(true);
-                    }
-
+                    // Send the answer back to the signaling server
+                    socket.current.emit("answer", { answer, to: offer.from });
+                    setIsConnected(true); // Set connection status to true
 
                 } catch (error) {
                     console.error("Failed to decode offer:", error);
                 }
             }
         };
-        handleOffer();
+
+        handleOffer(); // Call the function to handle incoming offer on mount
     }, []);
-  
-    // Create Peer Connection
+
+    // Function to create a peer connection and data channel
     const createPeerConnection = () => {
         peerConnection.current = new RTCPeerConnection({
-            iceServers: [{ urls: "stun:stun.l.google.com:19302" }], // Use Google's STUN server
+            iceServers: [{ urls: "stun:stun.l.google.com:19302" }], // STUN server for ICE candidate gathering
         });
 
-        peerConnection.current.onicecandidate = (event) => {
-            if (event.candidate) {
-                socket.current.emit("icecandidate", { candidate: event.candidate });
+        // Handle ICE candidates from the peer connection
+        peerConnection.current.onicecandidate = async (event) => {
+            if (event.candidate && peerConnection.current?.remoteDescription) {
+                console.log("Sending ICE Candidate:", event.candidate);
+                socket.current.emit("icecandidate", { candidate: event.candidate, to: clientId.current });
             }
+        };
+
+        // Create a data channel for peer-to-peer communication
+        dataChannel.current = peerConnection.current?.createDataChannel("Chat");
+
+        // Handle data channel open event
+        dataChannel.current.onopen = () => {
+            console.log("Data Channel Opened");
+        };
+
+        // Handle incoming messages on the data channel
+        dataChannel.current.onmessage = (event) => {
+            console.log("Received Message:", event.data);
+        };
+
+        // Handle data channel errors
+        dataChannel.current.onerror = (error) => {
+            console.error("Data Channel Error:", error);
+        };
+
+        // Handle data channel close event
+        dataChannel.current.onclose = () => {
+            console.log("Data Channel Closed");
         };
     };
 
-    // Start the WebRTC Connection
+    // Function to start a new connection by sending an offer
     const startConnection = async () => {
-        isInitiator.current = true;
-        if (!peerConnection.current) createPeerConnection();
+        isInitiator.current = true; // Mark as the initiator
+        initilizeSocket(); // Initialize socket connection
+        if (!peerConnection.current) createPeerConnection(); // Create peer connection if not already created
 
+        // Create an offer to send to the peer
         const offer = await peerConnection.current?.createOffer();
+        console.log(offer);
         await peerConnection.current?.setLocalDescription(offer);
-        
-       //convert to encode
-        const qrcodeData = JSON.stringify(offer);
-        const encodeddata= encodeURIComponent(qrcodeData);
+
+        // Prepare QR code data with offer
+        const qrcodeData = JSON.stringify({ offer, from: clientId.current });
+        const encodeddata = encodeURIComponent(qrcodeData);
         const qrd = `http://localhost:3000/connect?offer=${encodeddata}`;
-        const qrcode = await QRcode.toDataURL(qrd);
-        setQrCodeurl(qrcode); 
-        setCopyUrl(qrd)
-       
-        // Send offer to the signaling server
-         socket.current.emit("offer", { offer });
+        const qrcode = await QRcode.toDataURL(qrd); // Generate QR code
+        setQrCodeurl(qrcode); // Set the generated QR code URL
+        setCopyUrl(qrd); // Set the URL for copying to clipboard
+
+        // Send the offer to the signaling server
+        socket.current.emit("offer", { offer, from: clientId.current });
+
+        // If data channel is open, send a message
+        if (dataChannel.current?.readyState === "open") {
+            dataChannel.current.send("Hello from Initiator");
+        }
     };
 
-    // Disconnect WebRTC
+    // Function to disconnect the connection
     const disconnect = () => {
+        // Close the peer connection and reset state
         peerConnection.current?.close();
         peerConnection.current = null;
         setIsConnected(false);
-        socket.current.disconnect();
-        setQrCodeurl("");
+        socket.current.disconnect(); // Disconnect from the signaling server
+        setQrCodeurl(""); // Clear the QR code URL
     };
 
-    const copyToclipboard = () => {
+    // Function to copy the offer URL to clipboard
+    const copyToClipboard = () => {
         try {
-            navigator.clipboard.writeText(copyUrl);
-            alert("offer copied to clipboard");
-        }catch (e) {
+            navigator.clipboard.writeText(copyUrl); // Write the URL to clipboard
+            alert("Offer copied to clipboard");
+        } catch (e) {
             console.error("Failed to copy to clipboard:", e);
             alert("Failed to copy offer to clipboard");
         }
-       
     };
+
     return (
         <>
-        <BackButton />
+            <BackButton />
             <div className="flex justify-center align-middle items-center gap-10 h-screen">
-            <button onClick={startConnection} className="p-3 text-2xl bg-white rounded-lg">Connect</button>
-            {qrCodeurl && (
-                <div className='flex flex-col align-middle justify-center items-center'>
-                    <h2 className="text-white mt-4 text-lg font-semibold text-center">Scan this QR Code</h2>
-                    <img src={qrCodeurl} alt="QR Code" className="w-80 h-80 mt-4" />
-                    <button onClick={copyToclipboard} className='mt-3'>
-                        <img src={copyicon.src} alt="" className='w-5 h-5 '/>
-                    </button>
-                </div>
-            )}
-            <button onClick={disconnect} className="p-3 text-2xl bg-white rounded-lg">Disconnect</button>
-        </div>
-        </>
+                {/* Button to start a new connection */}
+                <button onClick={startConnection} className="p-3 text-2xl bg-white rounded-lg">Connect</button>
 
+                {/* Display QR code and copy button if available */}
+                {qrCodeurl && (
+                    <div className='flex flex-col align-middle justify-center items-center'>
+                        <h2 className="text-white mt-4 text-lg font-semibold text-center">Scan this QR Code</h2>
+                        <img src={qrCodeurl} alt="QR Code" className="w-80 h-80 mt-4" />
+                        <button onClick={copyToClipboard} className='mt-3'>
+                            <img src={copyicon.src} alt="" className='w-5 h-5' />
+                        </button>
+                    </div>
+                )}
+
+                {/* Button to disconnect the connection */}
+                <button onClick={disconnect} className="p-3 text-2xl bg-white rounded-lg">Disconnect</button>
+            </div>
+        </>
     );
 }

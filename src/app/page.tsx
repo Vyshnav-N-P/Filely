@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 import './globals.css';
 import FileUpload from './Components/fileupload';
 import Share from './Components/share';
-import PeerConnection from './Components/peerconnection';
 
 export default function Home() {
 
