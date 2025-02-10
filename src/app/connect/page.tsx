@@ -1,271 +1,201 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-'use client';
-import '../globals.css';
-import copyicon from '../../../public/Images/copy-icon.png';
-import { useState, useRef, useEffect } from "react";
-import { io } from "socket.io-client"; 
-import QRcode from "qrcode";
-import BackButton from '../Components/backbutton';
+'use client'
+import '../globals.css'
+import { useEffect, useRef, useState } from "react";
+import { io } from "socket.io-client";
 
-export default function Connect() {
-    // States for URL copy functionality and QR code generation
-    const [copyUrl, setCopyUrl] = useState<string>(''); 
-    const [qrCodeurl, setQrCodeurl] = useState<string>(''); 
-    const[sendid,setsendid] = useState<string>('');
-    // State to track the connection status
-    const [isConnected, setIsConnected] = useState(false); 
+const socket = io("http://localhost:5000");
 
-    // States for ICE candidate gathering
-    const pendingCandidates = useRef<RTCIceCandidateInit[]>([]);
+const Connect = () => {
+  const peerConnection = useRef<RTCPeerConnection | null>(null);
+  const dataChannel = useRef<RTCDataChannel | null>(null);
+  const [roomId, setRoomId] = useState("");
+  const [joined, setJoined] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-    // Refs to manage WebRTC peer connection and other related objects
-    const peerConnection = useRef<RTCPeerConnection | null>(null); 
-    const socket = useRef<any>(null); // Socket instance for signaling
-    const isInitiator = useRef<boolean>(true); // Tracks if the user is the initiator
-    const dataChannel = useRef<RTCDataChannel | null>(null); // Data channel for peer-to-peer communication
-    const clientId = useRef<string>(Math.random().toString(36).substring(7)); // Unique client ID generated for each client
 
-    // Initialize socket connection and handle signaling messages
+  useEffect(() => {
+    socket.on("user-joined", async (userId) => {
+      console.log("User joined:", userId);
+      await createOffer(userId);
+    });
+
+    socket.on("offer", async ({ sender, offer }) => {
+      console.log("Received offer from", sender);
+      await handleOffer(sender, offer);
+    });
+
+    socket.on("answer", async ({ sender, answer }) => {
+      console.log("Received answer from", sender);
+      await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(answer));
+    });
+
+    socket.on("ice-candidate", async ({ sender, candidate }) => {
+      if (candidate) {
+        console.log("Received ICE candidate:", candidate + "from " + sender);
+        await peerConnection.current?.addIceCandidate(new RTCIceCandidate(candidate));
+      }
+    });
+
+    return () => {
+      socket.off("user-joined");
+      socket.off("offer");
+      socket.off("answer");
+      socket.off("ice-candidate");
+    };
+  }, []);
+
+  const joinRoom = async () => {
+    if (!roomId) return;
+    socket.emit("join-room", roomId);
+    setJoined(true);
+    createPeerConnection();
+  };
+
+  const createPeerConnection = () => {
+    peerConnection.current = new RTCPeerConnection({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    });
+
+    dataChannel.current = peerConnection.current.createDataChannel("fileTransfer");
+    setupDataChannel();
+
+    peerConnection.current.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit("ice-candidate", { target: roomId, candidate: event.candidate });
+      }
+    };
+
+    peerConnection.current.ondatachannel = (event) => {
+      console.log("Received data channel");
+      dataChannel.current = event.channel;
+      setupDataChannel();
+    };
+  };
+
   
-    useEffect (()=>{
-      const initilizeSocket = () => {
-        if (!socket.current) {
-            socket.current = io("http://localhost:5000"); // Initialize socket connection only once
-        }
-    
-        console.log("Client ID:", clientId.current);
-    
-        socket.current.on("offer", async (data: any) => {
-            console.log("Received Offer:", data.offer);
-            if (!peerConnection.current) createPeerConnection();
-    
-            try {
-                await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(data.offer));
-                const answer = await peerConnection.current?.createAnswer();
-                await peerConnection.current?.setLocalDescription(answer);
-                socket.current.emit("answer", { answer, to: data.from });
-            } catch (err) {
-                console.error("Error handling offer:", err);
-            }
-        });
-    
-        socket.current.on("answer", async (data: any) => {
-            if (data.to === clientId.current) {
-                console.log("Received Answer:", data.answer);
-                await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(data.answer));
-                
-                   // Process any queued ICE candidates
-            pendingCandidates.current.forEach(async (candidate) => {
-                console.log("Adding queued ICE candidate:", candidate);
-                await peerConnection.current?.addIceCandidate(new RTCIceCandidate(candidate));
-            });
-            pendingCandidates.current = []; // Clear queue after processing
-            }
-        });
-    
-        socket.current.on("icecandidate", async (data: any) => {
-            if (data.to === clientId.current) {
-                if (peerConnection.current?.remoteDescription) {
-                    await peerConnection.current?.addIceCandidate(new RTCIceCandidate(data.candidate));
-                } else {
-                    console.log("Queuing ICE candidate");
-                    pendingCandidates.current.push(data.candidate);
-                }
-            }
-        });
-    
-        return () => {
-            socket.current?.disconnect();
-            console.log("Socket disconnected");
-        };
-    };
-    initilizeSocket();
-    },[]);
-
-    useEffect(() => {
-        const handleOffer = async () => {
-            const urlParams = new URLSearchParams(window.location.search); // Get URL query parameters
-            const offerparam = urlParams.get("offer"); // Get the offer parameter from the URL
-            
-            if (offerparam) {
-                isInitiator.current = false; // Mark as not initiator
-                
-
-                try {
-                    const decodedparam = decodeURIComponent(offerparam); // Decode the URL-encoded offer
-                    const offer = JSON.parse(decodedparam); // Parse the decoded offer
-                    console.log("Decoded Offer:", offer);
-
-                    if (!peerConnection.current) createPeerConnection(); // Create peer connection if not already created
-
-                    // Set remote description with the received offer
-                    await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(offer.offer))
-                   
-
-                    // Create an answer to the offer
-                    const answer = await peerConnection.current?.createAnswer();
-                    await peerConnection.current?.setLocalDescription(answer);
-                    socket.current.emit("answer", { answer, to: offer.from});
-                    setsendid(offer.from)
-                    console.log("Answer created "  + peerConnection.current?.remoteDescription?.type);
-                    // Send the answer back to the signaling server
-                  
-
-                } catch (error) {
-                    console.error("Failed to decode offer:", error);
-                }
-            }
-        };
-
-        handleOffer(); // Call the function to handle incoming offer on mount
-    }, []);
-
-    // Function to create a peer connection and data channel
-    const createPeerConnection = () => {
-        peerConnection.current = new RTCPeerConnection({
-            iceServers: [{ urls: "stun:stun.l.google.com:19302" }], // STUN server for ICE candidate gathering
-        });
-
-        // Handle ICE candidates from the peer connection
-        peerConnection.current.onicecandidate = async (event) => {
-            if (event.candidate ){ 
-                if(peerConnection.current?.remoteDescription) {
-                console.log("Sending ICE Candidate:", event.candidate);
-                socket.current.emit("icecandidate", { candidate: event.candidate, to: clientId.current });
-            }else{
-                console.log("RemoteDiscription not yet set m queueing Icecandidate:", event);
-                pendingCandidates.current.push(event.candidate);
-            }  
-        }
-        };
-
-         // Check if this is the **initiator**
-    if (isInitiator.current) {
-      // **Only initiator should create a data channel**
-      dataChannel.current = peerConnection.current.createDataChannel("Chat");
-
-      setupDataChannel(dataChannel.current);
-  } else {
-      // **Non-initiator listens for data channel**
-      peerConnection.current.ondatachannel = (event) => {
-          dataChannel.current = event.channel;
-          setupDataChannel(dataChannel.current);
-      };
-  }
-};
-
-// Function to handle DataChannel events
-const setupDataChannel = (channel: RTCDataChannel) => {
-  channel.onopen = () => {
-      console.log("Data Channel Opened ✅");
-      channel.send("Connection established! 🎉");
-  };
-
-  channel.onmessage = (event) => {
-      console.log("📩 Received:", event.data);
-  };
-
-  channel.onerror = (error) => {
-      console.error("❌ Data Channel Error:", error);
-  };
-
-  channel.onclose = () => {
-      console.log("Data Channel Closed ❌");
-  };
-};
-
-   // Function to start a new connection by sending an offer
-
-  const startConnection = async () => {
-     // Ensure socket is initialized
-
-    if (isInitiator.current) {
-        // Initiator logic: create offer and QR code
-        if (!peerConnection.current) createPeerConnection(); // Ensure peer connection is created
-
+  const setupDataChannel = () => {
+    if (!dataChannel.current) return;
+  
+    let receivedMetadata: { name: string; type: string } | null = null;
+  
+    dataChannel.current.onopen = () => console.log("Data channel opened");
+    dataChannel.current.onclose = () => console.log("Data channel closed");
+  
+    dataChannel.current.onmessage = (event) => {
+      console.log("Receiving data...");
+  
+      // Check if the data is a JSON string (metadata) or a file (ArrayBuffer)
+      if (typeof event.data === "string") {
         try {
-            const offer = await peerConnection.current?.createOffer();
-            await peerConnection.current?.setLocalDescription(offer);
-
-            const qrcodeData = JSON.stringify({ offer, from: clientId.current });
-            const encodedData = encodeURIComponent(qrcodeData);
-            const qrd = `http://localhost:3000/connect?offer=${encodedData}`;
-            const qrcode = await QRcode.toDataURL(qrd);
-
-            setQrCodeurl(qrcode);
-            setCopyUrl(qrd);
-
-            socket.current.emit("offer", { offer, from: clientId.current });
-
-            if (dataChannel.current?.readyState === "open") {
-                dataChannel.current.send("Hello from Initiator");
-            }
-        } catch (err) {
-            console.error("Failed to start connection:", err);
-            alert("Error starting the connection");
+          receivedMetadata = JSON.parse(event.data);
+          console.log("Received file metadata:", receivedMetadata);
+        } catch (error) {
+          console.error("Error parsing metadata:", error);
         }
-    } else {
-        // Non-initiator: Ensure answer is sent if an offer is received
-        if (peerConnection.current?.remoteDescription) {
-            try {
-                const answer = peerConnection.current?.localDescription?.sdp;
-                console.log ("Creating Answer for the offer :"+ answer + peerConnection.current.remoteDescription.sdp)
-                socket.current.emit("answer", { answer, to: sendid});
-                setIsConnected(true);
-            } catch (err) {
-                console.error("Failed to send answer:", err);
-                alert("Error sending answer");
-            }
-        } else {
-            alert("No offer received yet. Wait for the initiator to send an offer.");
-        }
+      } else if (event.data instanceof ArrayBuffer && receivedMetadata) {
+        console.log("Received file as ArrayBuffer, size:", event.data.byteLength, "bytes");
+  
+        // Convert ArrayBuffer to Blob with correct MIME type
+        const receivedBlob = new Blob([event.data], { type: receivedMetadata.type });
+  
+        // Create a download link with the correct filename
+        const url = URL.createObjectURL(receivedBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = receivedMetadata.name; // Set correct filename
+        document.body.appendChild(a);
+        a.click(); // Automatically trigger download
+        document.body.removeChild(a);
+  
+        // Free up memory
+        URL.revokeObjectURL(url);
+        console.log("File download triggered with correct format!");
+  
+        // Reset metadata
+        receivedMetadata = null;
+      } else {
+        console.error("Unexpected data format received:", event.data);
+      }
+    };
+  };
+  
+
+  const createOffer = async (userId: string) => {
+    if (!peerConnection.current) return;
+    const offer = await peerConnection.current.createOffer();
+    await peerConnection.current.setLocalDescription(offer);
+    socket.emit("offer", { target: userId, offer });
+  };
+
+  const handleOffer = async (sender: string, offer: RTCSessionDescriptionInit) => {
+    if (!peerConnection.current) {
+      createPeerConnection();
     }
+
+    if (!peerConnection.current) return;
+
+    await peerConnection.current.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await peerConnection.current.createAnswer();
+    await peerConnection.current.setLocalDescription(answer);
+    socket.emit("answer", { target: sender, answer });
+  };
+
+  const sendFile = () => {
+    if (!dataChannel.current || dataChannel.current.readyState !== "open") {
+      console.error("Data channel is not open " + dataChannel.current?.readyState);
+      return;
+    }
+    if (!selectedFile) return;
+
+    const fileMetadata =JSON.stringify({
+        name: selectedFile.name,
+        type: selectedFile.type
+    });
+
+    dataChannel.current?.send(fileMetadata);
+    console.log("Sending file:", selectedFile.name);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const arrayBuffer = reader.result as ArrayBuffer;
+      dataChannel.current?.send(arrayBuffer);
+      console.log("File sent successfully!");
+    };
+    reader.readAsArrayBuffer(selectedFile);
+  };
+
+  const handlefilechange=(event: React.ChangeEvent<HTMLInputElement>) => {
+    const fileInput = event.target.files?.[0];
+    console.log("File changed to ", fileInput?.name);
+    if (!fileInput) return;
+    setSelectedFile(fileInput);
+  };
+  return (
+    <div className="flex flex-col items-center justify-center h-screen">
+      {!joined ? (
+        <div>
+          <input
+            type="text"
+            placeholder="Enter Room ID"
+            className="border p-2 rounded"
+            id="fileInput"
+            value={roomId}
+            onChange={(e) => setRoomId(e.target.value)}
+          />
+          <button
+            onClick={joinRoom}
+            className="bg-blue-500 text-white p-2 ml-2 rounded"
+          >
+            Join Room
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center">
+          <input type="file" onChange={handlefilechange} className="mt-4 p-2 border" />
+          <button onClick={sendFile} className="bg-green-500 text-white p-2 mt-2 rounded" >Send</button>
+        </div>
+      )}
+    </div>
+  );
 };
 
-
-    // Function to disconnect the connection
-    const disconnect = () => {
-        // Close the peer connection and reset state
-        peerConnection.current?.close();
-        peerConnection.current = null;
-        setIsConnected(false);
-        socket.current.disconnect(); // Disconnect from the signaling server
-        setQrCodeurl(""); // Clear the QR code URL
-    };
-
-    // Function to copy the offer URL to clipboard
-    const copyToClipboard = () => {
-        try {
-            navigator.clipboard.writeText(copyUrl); // Write the URL to clipboard
-            alert("Offer copied to clipboard");
-        } catch (e) {
-            console.error("Failed to copy to clipboard:", e);
-            alert("Failed to copy offer to clipboard");
-        }
-    };
-
-    return (
-        <>
-            <BackButton />
-            <div className="flex justify-center align-middle items-center gap-10 h-screen">
-                {/* Button to start a new connection */}
-                
-                <button onClick={startConnection} className="p-3 text-2xl bg-green-400 rounded-lg">Connect</button>
-
-                {/* Display QR code and copy button if available */}
-                {qrCodeurl && (
-                    <div className='flex flex-col align-middle justify-center items-center'>
-                        <h2 className="text-white mt-4 text-lg font-semibold text-center">Scan this QR Code</h2>
-                        <img src={qrCodeurl} alt="QR Code" className="w-80 h-80 mt-4" />
-                        <button onClick={copyToClipboard} className='mt-3'>
-                            <img src={copyicon.src} alt="" className='w-5 h-5' />
-                        </button>
-                    </div>
-                )}
-
-                {/* Button to disconnect the connection */}
-                <button onClick={disconnect} className="p-3 text-2xl bg-red-400 rounded-lg">Disconnect</button>
-            </div>
-        </>
-    );
-}
+export default Connect;

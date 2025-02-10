@@ -1,59 +1,53 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
+//import express from 'express';
+//import http from 'http';
+// import { Server } from 'socket.io';
+// import cors from 'cors';
 
+const express = require('express');
+const http = require('http');
 const app = express();
+const cors = require('cors');
+const {Server} = require('socket.io');
+
 const server = http.createServer(app);
+
 const io = new Server(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"],
-    },
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
 });
 
-io.on("connection", (socket) => {
-    console.log("A user connected:", socket.id);
+io.on('connection', (socket) => {
+  console.log(`User connected: ${socket.id}`);
 
-    socket.on("joinRoom", (roomId) => {
-        socket.join(roomId);
-        console.log(`User ${socket.id} joined room ${roomId}`);
-    });
+  socket.on("join-room", (roomId) => {
+    socket.join(roomId);
+    console.log(`User ${socket.id} joined room ${roomId}`);
+    socket.to(roomId).emit("user-joined", socket.id);
+  });
 
-    socket.on("offer", (data) => {
-        socket.to(data.roomId).emit("offer", { offer: data.offer, from: socket.id });
-    });
+  socket.on("offer", ({ target, offer }) => {
+    socket.to(target).emit("offer", { sender: socket.id, offer });
+  });
 
-    socket.on("answer", (data) => {
-        socket.to(data.to).emit("answer", { answer: data.answer });
-    });
+  socket.on("answer", ({ target, answer }) => {
+    socket.to(target).emit("answer", { sender: socket.id, answer });
+  });
 
-    socket.on("icecandidate", (data) => {
-        socket.to(data.to).emit("icecandidate", { candidate: data.candidate });
-    });
+  socket.on("ice-candidate", ({ target, candidate }) => {
+    socket.to(target).emit("ice-candidate", { sender: socket.id, candidate });
+  });
 
-    socket.on("fileMetadata", (data) => {
-        socket.to(data.roomId).emit("fileMetadata", { fileName: data.fileName, fileSize: data.fileSize });
-    });
-
-    socket.on("fileChunk", (data) => {
-        socket.to(data.roomId).emit("fileChunk", { chunk: data.chunk });
-    });
-
-    socket.on("fileTransferComplete", (roomId) => {
-        socket.to(roomId).emit("fileTransferComplete");
-    });
-
-    socket.on("disconnect", () => {
-        console.log("User disconnected:", socket.id);
-    });
+  socket.on("disconnect", () => {
+    console.log(`User disconnected: ${socket.id}`);
+  });
 });
 
 server.listen(5000, () => {
-    console.log("Server running on port 5000");
+  console.log("Server is running on port 5000");
 });
-
-
 
 
 
