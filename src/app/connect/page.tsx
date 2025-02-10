@@ -1,18 +1,25 @@
 'use client'
+import { useSearchParams } from 'next/navigation';
 import '../globals.css'
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 
+
+
 const socket = io("http://localhost:5000");
 
 const Connect = () => {
+  const searchParams = useSearchParams(); // Get query params
+  const id = searchParams.get("id"); // Extract "id" from URL queryparams
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const dataChannel = useRef<RTCDataChannel | null>(null);
-  const [roomId, setRoomId] = useState("");
+  const [roomId, setRoomId] = useState(id || "");
   const [joined, setJoined] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-
+  //const genratedcode = Math.random().toString(36).substring(2, 9);
+ 
+ 
   useEffect(() => {
     socket.on("user-joined", async (userId) => {
       console.log("User joined:", userId);
@@ -48,6 +55,7 @@ const Connect = () => {
     if (!roomId) return;
     socket.emit("join-room", roomId);
     setJoined(true);
+    createLink();
     createPeerConnection();
   };
 
@@ -146,7 +154,7 @@ const Connect = () => {
       return;
     }
     if (!selectedFile) return;
-
+    //const CHUNK_SIZE = 16 * 1024 //16kb
     const fileMetadata =JSON.stringify({
         name: selectedFile.name,
         type: selectedFile.type
@@ -169,8 +177,22 @@ const Connect = () => {
     if (!fileInput) return;
     setSelectedFile(fileInput);
   };
+
+  const createLink = ()=>{
+    const link = `http://localhost:3000/connect?id=${roomId}`
+    try {
+      navigator.clipboard.writeText(link);
+      alert("Offer copied to clipboard");
+    } catch (e) {
+      console.error("Failed to copy to clipboard:", e);
+      alert("Failed to copy offer to clipboard");
+
+    }
+  };
+
+
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
+    <div className="flex flex-col items-center justify-center">
       {!joined ? (
         <div>
           <input
@@ -179,7 +201,8 @@ const Connect = () => {
             className="border p-2 rounded"
             id="fileInput"
             value={roomId}
-            onChange={(e) => setRoomId(e.target.value)}
+            onChange={(e) => { setRoomId(e.target.value);
+            }}
           />
           <button
             onClick={joinRoom}

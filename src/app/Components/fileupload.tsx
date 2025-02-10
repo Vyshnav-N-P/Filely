@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import '../globals.css';
 import pdfimage from '../../../public/Images/pdf-ICON.png';
 import audioimage from '../../../public/Images/audio-icon.png';
 import { useState } from 'react';
+//import Connect from '../connect/page';
 
-export default function Home() {
+export default function Fileupload() {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<any>(''); // For preview image
   const [fileName, setFileName] = useState('');
@@ -105,6 +107,8 @@ export default function Home() {
               Upload File
             </label>
           )}
+        </div>
+        <div>
         </div>
     </>
   );
