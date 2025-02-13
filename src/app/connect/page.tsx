@@ -8,7 +8,7 @@ import { io } from "socket.io-client";
 
 const socket = io("http://localhost:5000");
 
-const Connect = () => {
+const Connect = (fileSelected:File) => {
   const searchParams = useSearchParams(); // Get query params
   const id = searchParams.get("id"); // Extract "id" from URL queryparams
   const peerConnection = useRef<RTCPeerConnection | null>(null);
@@ -16,7 +16,7 @@ const Connect = () => {
   const [roomId, setRoomId] = useState(id || "");
   const [joined, setJoined] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
+  console.log(fileSelected);
   //const genratedcode = Math.random().toString(36).substring(2, 9);
  
  
