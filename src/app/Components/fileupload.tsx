@@ -19,7 +19,7 @@ export default function Fileupload() {
     const selectedFile = e.target.files[0];
     setFile(selectedFile);
     setFileName(selectedFile.name);
-
+    console.log("File changed to :"+selectedFile)
     const fr = new FileReader();
     fr.onload = () => {
       setPreviewUrl(fr.result);
@@ -123,7 +123,7 @@ export default function Fileupload() {
         </div>
         <div>
         {connectControl? (
-          <Connect fileSelected = {file} />
+          <Connect file = {file} />
         ):(
           <button onClick={shareHandle} className='bg-blue-100 pl-2 pr-2 rounded-2xl text-center text-white hover:text-blue-300 hover:bg-white'>Share</button>
         )}

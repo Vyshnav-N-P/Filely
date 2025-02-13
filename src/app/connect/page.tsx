@@ -4,21 +4,25 @@ import '../globals.css'
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 
-
+interface connectProps{
+  file: File| null;
+}
 
 const socket = io("http://localhost:5000");
 
-const Connect = (fileSelected:File) => {
+const Connect : React.FC<connectProps> = ({file}) => {
   const searchParams = useSearchParams(); // Get query params
   const id = searchParams.get("id"); // Extract "id" from URL queryparams
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const dataChannel = useRef<RTCDataChannel | null>(null);
   const [roomId, setRoomId] = useState(id || "");
   const [joined, setJoined] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  console.log(fileSelected);
-  //const genratedcode = Math.random().toString(36).substring(2, 9);
- 
+  const [selectedFile, setSelectedFile] = useState<File | null>(file);
+  const [downloadProgress, setDownloadProgress] = useState<number>(0); 
+
+  const [isInitiator,setisInitiator] = useState<boolean>(id? false : true)
+
+
  
   useEffect(() => {
     socket.on("user-joined", async (userId) => {
@@ -80,11 +84,11 @@ const Connect = (fileSelected:File) => {
     };
   };
 
-  
   const setupDataChannel = () => {
     if (!dataChannel.current) return;
   
-    let receivedMetadata: { name: string; type: string } | null = null;
+    let receivedMetadata: { name: string; type: string; size: number } | null = null;
+    let receivedSize = 0; // Initialize receivedSize
   
     dataChannel.current.onopen = () => console.log("Data channel opened");
     dataChannel.current.onclose = () => console.log("Data channel closed");
@@ -92,40 +96,51 @@ const Connect = (fileSelected:File) => {
     dataChannel.current.onmessage = (event) => {
       console.log("Receiving data...");
   
-      // Check if the data is a JSON string (metadata) or a file (ArrayBuffer)
+      // Check if the data is metadata (JSON) or file chunks (ArrayBuffer)
       if (typeof event.data === "string") {
         try {
           receivedMetadata = JSON.parse(event.data);
           console.log("Received file metadata:", receivedMetadata);
+          setDownloadProgress(0); // Reset progress when new file starts
+          receivedSize = 0; // Reset received size
         } catch (error) {
           console.error("Error parsing metadata:", error);
         }
       } else if (event.data instanceof ArrayBuffer && receivedMetadata) {
-        console.log("Received file as ArrayBuffer, size:", event.data.byteLength, "bytes");
+        console.log("Received file chunk, size:", event.data.byteLength, "bytes");
   
-        // Convert ArrayBuffer to Blob with correct MIME type
-        const receivedBlob = new Blob([event.data], { type: receivedMetadata.type });
+        receivedSize += event.data.byteLength; // Update received size
   
-        // Create a download link with the correct filename
-        const url = URL.createObjectURL(receivedBlob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = receivedMetadata.name; // Set correct filename
-        document.body.appendChild(a);
-        a.click(); // Automatically trigger download
-        document.body.removeChild(a);
+        // Update progress bar
+        const progress = (receivedSize / receivedMetadata.size) * 100;
+        setDownloadProgress(progress);
   
-        // Free up memory
-        URL.revokeObjectURL(url);
-        console.log("File download triggered with correct format!");
+        if (receivedSize >= receivedMetadata.size) {
+          // Convert received data into a Blob with correct MIME type
+          const receivedBlob = new Blob([event.data], { type: receivedMetadata.type });
   
-        // Reset metadata
-        receivedMetadata = null;
+          // Create a download link
+          const url = URL.createObjectURL(receivedBlob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = receivedMetadata.name; // Set correct filename
+          document.body.appendChild(a);
+          a.click(); // Automatically trigger download
+          document.body.removeChild(a);
+  
+          // Free memory
+          URL.revokeObjectURL(url);
+          console.log("File download triggered!");
+  
+          // Reset metadata
+          receivedMetadata = null;
+        }
       } else {
         console.error("Unexpected data format received:", event.data);
       }
     };
   };
+  
   
 
   const createOffer = async (userId: string) => {
@@ -157,7 +172,8 @@ const Connect = (fileSelected:File) => {
     //const CHUNK_SIZE = 16 * 1024 //16kb
     const fileMetadata =JSON.stringify({
         name: selectedFile.name,
-        type: selectedFile.type
+        type: selectedFile.type,
+        size: selectedFile.size,
     });
 
     dataChannel.current?.send(fileMetadata);
@@ -171,12 +187,6 @@ const Connect = (fileSelected:File) => {
     reader.readAsArrayBuffer(selectedFile);
   };
 
-  const handlefilechange=(event: React.ChangeEvent<HTMLInputElement>) => {
-    const fileInput = event.target.files?.[0];
-    console.log("File changed to ", fileInput?.name);
-    if (!fileInput) return;
-    setSelectedFile(fileInput);
-  };
 
   const createLink = ()=>{
     const link = `http://localhost:3000/connect?id=${roomId}`
@@ -213,8 +223,21 @@ const Connect = (fileSelected:File) => {
         </div>
       ) : (
         <div className="flex flex-col items-center">
-          <input type="file" onChange={handlefilechange} className="mt-4 p-2 border" />
-          <button onClick={sendFile} className="bg-green-500 text-white p-2 mt-2 rounded" >Send</button>
+          {isInitiator? (<button onClick={sendFile} className="bg-green-500 text-white p-2 mt-2 rounded" >Send</button>) : (
+            <>
+             <p className='text-3xl font-semibold text-white'>FILE TRANSFER</p>
+             {/* Progress Bar */}
+             {downloadProgress > 0 && ( 
+              <div className="w-full bg-gray-300 rounded h-4 mt-4">
+                <div
+                  className="bg-blue-500 h-4 rounded"
+                  style={{ width: `${downloadProgress}%` }}
+                ></div>
+              </div>
+             )} 
+            {downloadProgress === 100 && <p className="mt-2 text-green-500">Download Complete!</p>}
+            </>
+            )}
         </div>
       )}
     </div>
