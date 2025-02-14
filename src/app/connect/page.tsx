@@ -4,10 +4,10 @@
 
 import { useSearchParams } from 'next/navigation';
 import '../globals.css'
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import ProgressBar from '../../Components/ui/progressBar';
-import {  ProgressBarProps } from '@/types/interfaces';
+import { connectProps , ProgressBarProps } from '@/types/interfaces';
 
 const socket = io("http://localhost:5000");
 
@@ -248,6 +248,7 @@ const sendFile = () => {
 
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <div className="flex flex-col items-center justify-center">
       {!joined ? (
         <div>
@@ -283,6 +284,7 @@ const sendFile = () => {
         </div>
       )}
     </div>
+    </Suspense>
   );
 };
 
