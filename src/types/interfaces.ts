@@ -4,5 +4,5 @@ export interface ProgressBarProps{
   }
   
 export interface connectProps{
-    file: File;
+    file: File| null;
   }
