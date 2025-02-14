@@ -50,7 +50,9 @@ io.on('connection', (socket) => {
     console.log(`User disconnected: ${socket.id}`);
   });
 });
-
+app.get( '' , (req ,res ) => {
+  res.send("FILELY PROPERTY");
+})
 server.listen(5000, () => {
   console.log("Server is running on port 5000");
 });
