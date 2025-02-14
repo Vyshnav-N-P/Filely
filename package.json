@@ -37,6 +37,7 @@
     "@types/react-dom": "^19",
     "@types/simple-peer": "^9.11.8",
     "@types/socket.io": "^3.0.2",
+    "@types/socket.io-client": "^3.0.0",
     "@types/streamsaver": "^2.0.5",
     "@types/websocket": "^1.0.10",
     "autoprefixer": "^10.4.19",

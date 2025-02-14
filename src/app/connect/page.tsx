@@ -17,7 +17,7 @@ interface ProgressBarProps{
 
 const socket = io("http://localhost:5000");
 
-const Connect : React.FC<connectProps> = ({file}) => {
+const Connect  = ({file}:connectProps) => {
   const searchParams = useSearchParams(); // Get query params
   const id = searchParams.get("id"); // Extract "id" from URL queryparams
   const peerConnection = useRef<RTCPeerConnection | null>(null);
