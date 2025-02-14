@@ -4,7 +4,7 @@ import '../../globals.css';
 import Image from 'next/image';
 import pdfimage from '../../../../public/Images/pdf-ICON.png';
 import audioimage from '../../../../public/Images/audio-icon.png';
-import { useState , } from 'react';
+import { Suspense, useState , } from 'react';
 import Connect from '../page';
 
 //import Connect from '../connect/page';
@@ -91,6 +91,7 @@ export default function Fileupload() {
 
   return (
     <>
+    <Suspense>
      <div className="min-w-[16rem] min-h-[10rem] bg-white shadow-2xl rounded-lg p-4 hover:bg-gray-300 hover:text-blue-300 text-white text-xl relative">
           <input
             type="file"
@@ -124,11 +125,12 @@ export default function Fileupload() {
         </div>
         <div>
         {connectControl? (
-          <Connect  />
+          <Connect file = {file} />
         ):(
           <button onClick={shareHandle} className='bg-blue-100 pl-2 pr-2 rounded-2xl text-center text-white hover:text-blue-300 hover:bg-white'>Share</button>
         )}
         </div>
+        </Suspense>
     </>
   );
 }

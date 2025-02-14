@@ -11,14 +11,14 @@ import { connectProps , ProgressBarProps } from '@/types/interfaces';
 
 const socket = io("http://localhost:5000");
 
-export default function Connect (){
+export default function Connect ({file}:connectProps){
   const searchParams = useSearchParams(); // Get query params
   const id = searchParams.get("id"); // Extract "id" from URL queryparams
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const dataChannel = useRef<RTCDataChannel | null>(null);
   const [roomId, setRoomId] = useState(id || "");
   const [joined, setJoined] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>();
+  const [selectedFile, setSelectedFile] = useState<File | null>(file);
   const [downloadProgress, setDownloadProgress] = useState<number>(0); 
   const [sendProgress, setsendProgress] = useState<number>(0); 
 
