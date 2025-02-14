@@ -124,7 +124,7 @@ export default function Fileupload() {
         </div>
         <div>
         {connectControl? (
-          <Connect file = {file} />
+          <Connect  />
         ):(
           <button onClick={shareHandle} className='bg-blue-100 pl-2 pr-2 rounded-2xl text-center text-white hover:text-blue-300 hover:bg-white'>Share</button>
         )}

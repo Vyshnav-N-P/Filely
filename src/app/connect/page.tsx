@@ -7,7 +7,7 @@ import '../globals.css'
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import ProgressBar from '../../Components/ui/progressBar';
-import { connectProps , ProgressBarProps } from '@/types/interfaces';
+import {  ProgressBarProps } from '@/types/interfaces';
 
 const socket = io("http://localhost:5000");
 
