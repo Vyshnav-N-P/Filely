@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 'use client'
@@ -9,7 +10,7 @@ import { io } from "socket.io-client";
 import ProgressBar from '../../Components/ui/progressBar';
 import { connectProps , ProgressBarProps } from '@/types/interfaces';
 
-const socket = io("http://localhost:5000");
+const socket = io("https://filely-3hg5.onrender.com");
 
 export default function Connect ({file}:connectProps){
   const searchParams = useSearchParams(); // Get query params
@@ -55,7 +56,7 @@ export default function Connect ({file}:connectProps){
       socket.off("answer");
       socket.off("ice-candidate");
     };
-  });
+  },[]);
 
   const joinRoom = async () => {
     if (!roomId) return;
