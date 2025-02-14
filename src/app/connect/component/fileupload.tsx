@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import '../../globals.css';
+import Image from 'next/image';
 import pdfimage from '../../../../public/Images/pdf-ICON.png';
 import audioimage from '../../../../public/Images/audio-icon.png';
 import { useState , } from 'react';
@@ -34,14 +35,14 @@ export default function Fileupload() {
     if (file.type.match('image.*')) {
       return (
         <div className='w-52 h-80 flex flex-col justify-center items-center bg-gray-200 rounded-lg gap-2'>
-          <img src={previewUrl} alt="Preview" className="w-full h-full object-cover rounded-lg items-center"  />;
+          <Image src={previewUrl} alt="Preview" className="w-full h-full object-cover rounded-lg items-center"  />;
           <p className="text-black text-sm">{fileName}</p>
         </div>
       );
     } else if (file.type.match('audio.*')) {
       return (
       <div className='w-52 h-80 flex flex-col justify-center items-center align-middle bg-gray-200 rounded-lg gap-2'>
-        <img src={audioimage.src} alt="Audio Icon" className="w-16 h-16" />
+        <Image src={audioimage.src} alt="Audio Icon" className="w-16 h-16" />
         <audio controls src={previewUrl} className="w-full h-10" />
         <p className="text-black text-sm">{fileName}</p>
       </div>
@@ -50,7 +51,7 @@ export default function Fileupload() {
     } else if (file.type.match('application/pdf')) {
       return (
         <div className="w-52 h-80 flex flex-col justify-center items-center align-middle bg-gray-200 rounded-lg">
-          <img src={pdfimage.src} alt="PDF Icon" className="w-full h-full object-cover" />
+          <Image src={pdfimage.src} alt="PDF Icon" className="w-full h-full object-cover" />
           <p className="text-black ml-2">{fileName}</p>
         </div>
       );
