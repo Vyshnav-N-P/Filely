@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 'use client'
 
 import { useSearchParams } from 'next/navigation';
@@ -6,14 +6,7 @@ import '../globals.css'
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import ProgressBar from '../../Components/ui/progressBar';
-
-interface connectProps{
-  file: File| null;
-}
-interface ProgressBarProps{
-  progress: number;
-  type: "sending" | "receiving";
-}
+import { connectProps , ProgressBarProps } from '@/types/interfaces';
 
 const socket = io("http://localhost:5000");
 
