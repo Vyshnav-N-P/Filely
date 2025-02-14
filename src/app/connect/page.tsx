@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 'use client'
 
@@ -54,7 +55,7 @@ const Connect  = ({file}:connectProps) => {
       socket.off("answer");
       socket.off("ice-candidate");
     };
-  }, []);
+  });
 
   const joinRoom = async () => {
     if (!roomId) return;
