@@ -11,7 +11,7 @@ import { connectProps , ProgressBarProps } from '@/types/interfaces';
 
 const socket = io("http://localhost:5000");
 
-const Connect  = ({file}:connectProps) => {
+export default function Connect ({file}:connectProps){
   const searchParams = useSearchParams(); // Get query params
   const id = searchParams.get("id"); // Extract "id" from URL queryparams
   const peerConnection = useRef<RTCPeerConnection | null>(null);
@@ -286,4 +286,4 @@ const sendFile = () => {
   );
 };
 
-export default Connect;
+
