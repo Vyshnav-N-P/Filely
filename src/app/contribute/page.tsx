@@ -2,9 +2,9 @@
 
 import '../globals.css'
 import Image from 'next/image';
-import BackButton from '../Components/backbutton';
+import BackButton from '../../Components/ui/backbutton';
 import grow from '../../../public/Images/grow.svg'
-import Paymentform from '../Components/paymentform';
+import Paymentform from '../../Components/features/paymentform';
 import { useState } from 'react';
 
 export default function Contribute(){

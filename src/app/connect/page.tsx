@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
 import { useSearchParams } from 'next/navigation';
 import '../globals.css'
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
-import ProgressBar from '../Components/progressBar';
+import ProgressBar from '../../Components/ui/progressBar';
 
 interface connectProps{
   file: File| null;

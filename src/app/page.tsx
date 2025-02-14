@@ -1,7 +1,7 @@
 'use client';
 import {  } from 'react';
 import './globals.css';
-import FileUpload from './Components/fileupload';
+import FileUpload from './connect/component/fileupload';
 
 
 export default function Home() {
