@@ -19,6 +19,12 @@ const io = new Server(server, {
   }
 });
 
+// Enable CORS for the Express app
+app.use(cors({
+  origin: "http://localhost:3000", // Allow only localhost:3000
+  methods: ["GET", "POST"],
+}));
+
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
