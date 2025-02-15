@@ -1,7 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
-'use client'
+'use client';
 
 import '../globals.css'
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
@@ -16,8 +13,7 @@ export default function Connect (){
   const file= useFilelyStore((state) => state.FILE);
 
   // Get query parameters from URL
-  const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
+ const [id,setId] = useState<string >('');
   
   //const id = searchParams.get("id"); // Extract "id" from URL queryparams
 
@@ -37,9 +33,20 @@ export default function Connect (){
     console.log("selected file : " + file);
   }, [file]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tempId = params.get("id");
+      if (tempId) {
+        setId(tempId);
+        setisInitiator(false);
+      }
+    }
+  }, []); 
+
  // Socket connection and services
   useEffect(() => {
-
+  
     socket.on("user-joined", async (userId) => {
       console.log("User joined:", userId);
       await createOffer(userId);
@@ -68,6 +75,7 @@ export default function Connect (){
       socket.off("answer");
       socket.off("ice-candidate");
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
   const joinRoom = async () => {
