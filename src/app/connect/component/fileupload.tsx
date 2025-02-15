@@ -102,7 +102,7 @@ useEffect(() => {
 
   return (
     <>
-    <Suspense>
+    <Suspense fallback={<div className='h-screen flex justify-center align-middle items-center'>Loading...</div>}>
      <div className="min-w-[16rem] min-h-[10rem] bg-white shadow-2xl rounded-lg p-4 hover:bg-gray-300 hover:text-blue-300 text-white text-xl relative">
           <input
             type="file"
