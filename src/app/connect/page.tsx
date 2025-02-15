@@ -5,6 +5,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import ProgressBar from '../../Components/ui/progressBar';
 import { useFilelyStore } from '@/stores/filelyStore';
+import RecieverPage from '@/Components/ui/recieverPage';
 
 const socket = io("https://filely-3hg5.onrender.com");
 
@@ -297,10 +298,11 @@ const sendFile = () => {
               Send
             </button>
             ) : (
-            <>
+            <div className='flex flex-col items-center justify-center align-middle'>
+             <RecieverPage />
              <ProgressBar progress={downloadProgress} type='receiving'/>
            
-            </>
+            </div>
             )}
             {isInitiator && <ProgressBar progress={sendProgress} type='sending' />}
         </div>
