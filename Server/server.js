@@ -14,14 +14,14 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "https://filely.netlify.app/",
-    methods: ["GET", "POST"]
-  }
+    origin: ["http://localhost:3000", "https://filely.netlify.app"],
+    methods: ["GET", "POST"],
+  },
 });
 
-// Enable CORS for the Express app
+// Enable CORS for Express routes
 app.use(cors({
-  origin: ["http://localhost:3000","https://filely.netlify.app"], // Allow only localhost:3000
+  origin: ["http://localhost:3000", "https://filely.netlify.app"],
   methods: ["GET", "POST"],
 }));
 
