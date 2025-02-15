@@ -5,14 +5,17 @@
 
 import { useSearchParams } from 'next/navigation';
 import '../globals.css'
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import ProgressBar from '../../Components/ui/progressBar';
-import { connectProps , ProgressBarProps } from '@/types/interfaces';
+import { useFilelyStore } from '@/stores/filelyStore';
 
 const socket = io("https://filely-3hg5.onrender.com");
 
-export default function Connect ({file}:connectProps){
+export default function Connect (){
+  // ZUSTAND initializing
+  const file= useFilelyStore((state) => state.FILE);
+
   const searchParams = useSearchParams(); // Get query params
   const id = searchParams.get("id"); // Extract "id" from URL queryparams
   const peerConnection = useRef<RTCPeerConnection | null>(null);
@@ -24,7 +27,13 @@ export default function Connect ({file}:connectProps){
   const [sendProgress, setsendProgress] = useState<number>(0); 
 
   const [isInitiator,setisInitiator] = useState<boolean>(id? false : true)
- 
+  
+  //re rendering if neeeded
+  useMemo(() => {
+    setSelectedFile(file);
+    console.log("selected file : " + file);
+  }, [file]);
+
  // Socket connection and services
   useEffect(() => {
 

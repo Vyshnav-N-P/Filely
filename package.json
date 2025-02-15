@@ -25,7 +25,8 @@
     "streamsaver": "^2.0.6",
     "vercel": "^41.0.1",
     "web-socket": "^0.0.0",
-    "websocket": "^1.0.35"
+    "websocket": "^1.0.35",
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
