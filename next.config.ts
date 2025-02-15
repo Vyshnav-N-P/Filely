@@ -6,10 +6,12 @@ const nextConfig: NextConfig = {
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
     RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
   },
-
-  missingSuspenseWithCSRBailout: false,
 };
 
- 
+module.exports = {
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  },
+}
 
 export default nextConfig;
