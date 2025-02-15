@@ -256,7 +256,8 @@ const sendFile = () => {
 
   // Copying link to clipboard
   const createLink = ()=>{
-    const link = `http://localhost:3000/connect?id=${roomId}`
+    const link = `https://filely.netlify.app/connect?id=${roomId}`
+    //const link = `${window.location.origin}/connect?id=${roomId}`;
     try {
       navigator.clipboard.writeText(link);
       alert("Offer copied to clipboard");
