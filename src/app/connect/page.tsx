@@ -14,10 +14,8 @@ export default function Connect (){
   const file= useFilelyStore((state) => state.FILE);
 
   // Get query parameters from URL
- const [id,setId] = useState<string >('');
+  const [id,setId] = useState<string >('');
   
-  //const id = searchParams.get("id"); // Extract "id" from URL queryparams
-
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const dataChannel = useRef<RTCDataChannel | null>(null);
   const [roomId, setRoomId] = useState(id || "");
@@ -40,6 +38,7 @@ export default function Connect (){
       const tempId = params.get("id");
       if (tempId) {
         setId(tempId);
+        setRoomId(tempId);
         setisInitiator(false);
       }
     }
@@ -298,7 +297,7 @@ const sendFile = () => {
               Send
             </button>
             ) : (
-            <div className='flex flex-col items-center justify-center align-middle'>
+            <div className='flex flex-col items-center justify-center align-middle h-screen'>
              <RecieverPage />
              <ProgressBar progress={downloadProgress} type='receiving'/>
            
