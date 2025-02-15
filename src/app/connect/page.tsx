@@ -3,7 +3,6 @@
 
 'use client'
 
-import { useSearchParams } from 'next/navigation';
 import '../globals.css'
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
@@ -16,8 +15,12 @@ export default function Connect (){
   // ZUSTAND initializing
   const file= useFilelyStore((state) => state.FILE);
 
-  const searchParams = useSearchParams(); // Get query params
-  const id = searchParams.get("id"); // Extract "id" from URL queryparams
+  // Get query parameters from URL
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+  
+  //const id = searchParams.get("id"); // Extract "id" from URL queryparams
+
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const dataChannel = useRef<RTCDataChannel | null>(null);
   const [roomId, setRoomId] = useState(id || "");
