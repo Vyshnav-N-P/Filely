@@ -1,18 +1,25 @@
 import {create} from "zustand";
 
+export enum ConnectStatus{
+    Connected = "Connected",
+    Connecting = "Connecting",
+    Disconnected = "Disconnected",
+    Waiting = "Waiting",
+    Failed = "Failed"
+}
 export type RoomState= {
     ID : string;
-    ConnectionStatus : "Connected" | "Connecting" | "Disconnected" | "Waiting" | "Failed" ;
+    ConnectionStatus : ConnectStatus ;
 }
 
 export type Actions = {
     setRoomID : (id: string) => void;
-    setConnectionStatus : (conn : "Connected" | "Connecting" | "Disconnected" | "Waiting" | "Failed") => void;
+    setConnectionStatus : (conn : ConnectStatus) => void;
 }
 
 export const useRoomStore = create<RoomState & Actions>((set)=>({
     ID :"" ,
-    ConnectionStatus : "Waiting",
+    ConnectionStatus : ConnectStatus.Waiting,
     setRoomID : (id: string) => set(()=> ( {ID :id})),
-    setConnectionStatus : (conn : "Connected" | "Connecting" | "Disconnected") =>  set(()=> ( {ConnectionStatus : conn})),
+    setConnectionStatus : (conn : ConnectStatus) =>  set(()=> ( {ConnectionStatus : conn})),
 }));

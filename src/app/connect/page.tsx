@@ -6,7 +6,7 @@ import { io } from "socket.io-client";
 import ProgressBar from '../../Components/ui/progressBar';
 import { useFilelyStore } from '@/stores/filelyStore';
 import RecieverPage from '@/Components/ui/recieverPage';
-import { useRoomStore } from '@/stores/roomStore';
+import { ConnectStatus, useRoomStore } from '@/stores/roomStore';
 
 const socket = io("https://filely-3hg5.onrender.com");
 
@@ -43,7 +43,7 @@ export default function Connect (){
         setId(tempId);
         setRoomId(tempId);
         setisInitiator(false);
-        setConnectionStatus("Connecting");
+        setConnectionStatus(ConnectStatus.Connecting);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -55,26 +55,26 @@ export default function Connect (){
     socket.on("user-joined", async (userId) => {
       console.log("User joined:", userId);
       await createOffer(userId);
-      setConnectionStatus("Waiting");
+      setConnectionStatus(ConnectStatus.Waiting);
     });
 
     socket.on("offer", async ({ sender, offer }) => {
       console.log("Received offer from", sender);
       await handleOffer(sender, offer);
-      setConnectionStatus("Waiting");
+      setConnectionStatus(ConnectStatus.Waiting);
     });
 
     socket.on("answer", async ({ sender, answer }) => {
       console.log("Received answer from", sender);
       await peerConnection.current?.setRemoteDescription(new RTCSessionDescription(answer));
-      setConnectionStatus("Waiting");
+      setConnectionStatus(ConnectStatus.Waiting);
     });
 
     socket.on("ice-candidate", async ({ sender, candidate }) => {
       if (candidate) {
         console.log("Received ICE candidate:", candidate + "from " + sender);
         await peerConnection.current?.addIceCandidate(new RTCIceCandidate(candidate));
-        setConnectionStatus("Connecting");
+        setConnectionStatus(ConnectStatus.Connecting);
       }
     });
 
@@ -112,7 +112,7 @@ export default function Connect (){
 
     peerConnection.current.ondatachannel = (event) => {
       console.log("Received data channel");
-      setConnectionStatus("Connected");
+      setConnectionStatus( ConnectStatus.Connected);
       dataChannel.current = event.channel;
       setupDataChannel();
     };
@@ -127,12 +127,12 @@ export default function Connect (){
       let receivedChunks: ArrayBuffer[] = []; // Store chunks
     
       dataChannel.current.onopen = () => {
-        setConnectionStatus("Connected");
+        setConnectionStatus(ConnectStatus.Connected);
         console.log("Data channel opened");
       };
       
       dataChannel.current.onclose = () => {
-        setConnectionStatus("Connected");
+        setConnectionStatus(ConnectStatus.Disconnected);
         console.log("Data channel closed");
       };
     
@@ -228,6 +228,7 @@ export default function Connect (){
 const sendFile = () => {
   if (!dataChannel.current || dataChannel.current.readyState !== "open") {
     console.error("Data channel is not open " + dataChannel.current?.readyState);
+    setConnectionStatus(ConnectStatus.Failed);
     return;
   }
   if (!selectedFile) return;
