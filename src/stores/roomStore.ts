@@ -19,7 +19,7 @@ export type Actions = {
 
 export const useRoomStore = create<RoomState & Actions>((set)=>({
     ID :"" ,
-    ConnectionStatus : ConnectStatus.Waiting,
+    ConnectionStatus : ConnectStatus.Disconnected ,
     setRoomID : (id: string) => set(()=> ( {ID :id})),
     setConnectionStatus : (conn : ConnectStatus) =>  set(()=> ( {ConnectionStatus : conn})),
 }));

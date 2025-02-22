@@ -8,6 +8,7 @@ import { useFilelyStore } from '@/stores/filelyStore';
 import RecieverPage from '@/Components/ui/recieverPage';
 import { ConnectStatus, useRoomStore } from '@/stores/roomStore';
 
+
 const socket = io("https://filely-3hg5.onrender.com");
 
 export default function Connect (){
@@ -15,7 +16,7 @@ export default function Connect (){
   const file= useFilelyStore((state) => state.FILE);
   const connectionStatus = useRoomStore(state => state.ConnectionStatus);
   const setConnectionStatus = useRoomStore((state) => state.setConnectionStatus);
-
+  const Setdefaulroomid = useRoomStore(state => state.setRoomID);
   // Get query parameters from URL
   const [id,setId] = useState<string >('');
   
@@ -91,7 +92,9 @@ export default function Connect (){
     if (!roomId) return;
     socket.emit("join-room", roomId);
     setJoined(true);
+    Setdefaulroomid(roomId);
     createLink();
+    setConnectionStatus(ConnectStatus.Waiting);
     createPeerConnection();
   };
 
@@ -311,9 +314,13 @@ const sendFile = () => {
       ) : (
         <div className="flex flex-col items-center">
           {isInitiator? (
-            <button onClick={sendFile} className="bg-green-500 text-white p-2 mt-2 rounded" >
-              Send
-            </button>
+            <div>
+              <button onClick={sendFile} className="bg-green-500 text-white p-2 mt-2 rounded" >
+                Send
+              </button>
+              
+            </div>
+            
             ) : (
             <div className='flex flex-col items-center justify-center align-middle h-screen'>
              <RecieverPage />

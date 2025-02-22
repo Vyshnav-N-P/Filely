@@ -2,11 +2,12 @@
 import {  } from 'react';
 import './globals.css';
 import FileUpload from './connect/component/fileupload';
+import QRCodeGenerator from '@/Components/features/generateQR';
+import { ConnectStatus, useRoomStore } from '@/stores/roomStore';
 
 
 export default function Home() {
-
-
+  const connectionStatus = useRoomStore(state => state.ConnectionStatus); 
   return (
     <>
       <div className='flex flex-col md:flex-row justify-between m-5'> 
@@ -32,6 +33,7 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col align-middle items-center">
+        {connectionStatus === ConnectStatus.Waiting && <QRCodeGenerator />}
           <h3 className="text-white text-xl md:text-3xl">
             Share files directly from your device to anywhere
           </h3>
