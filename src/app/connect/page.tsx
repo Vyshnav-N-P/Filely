@@ -318,6 +318,7 @@ const sendFile = () => {
             <div className='flex flex-col items-center justify-center align-middle h-screen'>
              <RecieverPage />
              <ProgressBar progress={downloadProgress} type='receiving'/>
+             <div className='text-lg text-white mt-10'>Connection Status : {connectionStatus}</div>
             </div>
             )}
             {isInitiator && <ProgressBar progress={sendProgress} type='sending' />}
